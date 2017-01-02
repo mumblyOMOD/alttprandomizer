@@ -31,7 +31,7 @@ namespace AlttpRandomizer.Random
         public bool SramTrace { get; set; }
         public bool ShowComplexity { get; set; }
         public RandomizerDifficulty Difficulty { get; set; }
-        public HeartBeepSpeed HeartBeepSpeed { get; set; } 
+        public HeartBeepSpeed HeartBeepSpeed { get; set; }
         public bool NoRandomization { get; set; }
 
         public RandomizerOptions()
@@ -55,7 +55,7 @@ namespace AlttpRandomizer.Random
         private readonly IRomLocations romLocations;
         private readonly RandomizerLog log;
         private int complexity;
-        
+
         public int GetComplexity()
         {
             return complexity;
@@ -189,11 +189,11 @@ namespace AlttpRandomizer.Random
         /// <param name="locations"></param>
         private void SetupTestItems(List<Location> locations)
         {
-            //// add red boomerang 
+            //// add red boomerang
             //var location = locations.First(x => x.Name == "[cave-022-B1] Thief's hut [top chest]");
             //location.Item = new InventoryItem(InventoryItemType.RedBoomerang);
 
-            //// add blue boomerang 
+            //// add blue boomerang
             //location = locations.First(x => x.Name == "[cave-022-B1] Thief's hut [top left chest]");
             //location.Item = new InventoryItem(InventoryItemType.Boomerang);
 
@@ -578,12 +578,29 @@ namespace AlttpRandomizer.Random
 
             PlaceItems(new List<Region> { region }, tempItemPool, region);
 
+            // remove for testing access
+            haveItems.Remove(insertedItem);
+
+            var canAccessAll = true;
+            var locations = (from Location location in romLocations.Locations where (location.Region == region) select location).ToList();
+
+            foreach (var location in locations)
+            {
+                if (location.Item != null && !location.CanAccess(haveItems))
+                {
+                    canAccessAll = false;
+                    break;
+                } else if (location.Item == new InventoryItem(insertedItem)) {
+                    haveItems.Add(insertedItem);
+                }
+            }
+
             haveItems.RemoveAll(x => x == InventoryItemType.BigKey);
             haveItems.RemoveAll(x => x == InventoryItemType.Compass);
             haveItems.RemoveAll(x => x == InventoryItemType.Key);
             haveItems.RemoveAll(x => x == InventoryItemType.Map);
 
-            if (tempItemPool.Count > 0 || !romLocations.CanDefeatDungeon(region, haveItems))
+            if (tempItemPool.Count > 0 || !canAccessAll || !romLocations.CanDefeatDungeon(region, haveItems))
             {
                 romLocations.ResetRegion(region);
                 log?.RemoveOrderedItems(region);
